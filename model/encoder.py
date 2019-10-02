@@ -40,4 +40,5 @@ class Encoder(nn.Module):
         x = self.conv1(x)
         x = self.iter_block(x)
         x = self.out_block(x)
-        return torch.round(x * 63)
+        # return torch.round(x * 63)
+        return x * 63

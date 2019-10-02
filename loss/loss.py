@@ -19,3 +19,14 @@ class PerceptualLoss(nn.Module):
         fake_high_resolution = self.up_sampler(decoded_image)
         perceptual_loss = self.l1_loss(self.loss_network(high_resolution), self.loss_network(fake_high_resolution))
         return perceptual_loss
+
+
+class GradientPenalty(nn.Module):
+    def __init__(self, eta, image_size=224):
+        super(GradientPenalty, self).__init__()
+        self.eta = eta
+
+    def forward(self, real_image, fake_image):
+        image = self.eta * real_image + (1 - self.eta) * fake_image
+
+        return x
