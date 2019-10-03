@@ -68,7 +68,6 @@ class Trainer:
 
         perceptual_criterion = PerceptualLoss().to(self.device)
         content_criterion = nn.MSELoss().to(self.device)
-        discriminator_l1_criterion = nn.L1Loss().to(self.device)
 
         self.Encoder.train()
         self.Decoder.train()
@@ -135,8 +134,7 @@ class Trainer:
 
                 interpolated_image = self.eta * images + (1 - self.eta) * decoded_image
                 gravity_penalty = self.Disciminator(interpolated_image).mean()
-                discriminator_loss = discriminator_l1_criterion(self.Disciminator(decoded_image),
-                                                                self.Disciminator(images)) + \
+                discriminator_loss = self.Disciminator(decoded_image) - self.Disciminator(images)) + \
                                      gravity_penalty * self.penalty_loss_factor
 
                 optimizer_discriminator.zero_grad()
