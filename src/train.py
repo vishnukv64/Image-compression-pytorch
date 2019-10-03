@@ -28,8 +28,8 @@ class Trainer:
         self.b2 = config.b2
         self.weight_decay = config.weight_decay
         self.decay_batch_size = config.decay_batch_size
-        self.content_factor = config.content_factor
-        self.perceptual_factor = config.perceptual_factor
+        self.content_loss_factor = config.content_loss_factor
+        self.perceptual_loss_factor = config.perceptual_loss_factor
         self.generator_loss_factor = config.generator_loss_factor
         self.discriminator_loss_factor = config.discriminator_loss_factor
         self.penalty_loss_factor = config.penalty_loss_factor
@@ -102,7 +102,7 @@ class Trainer:
                 perceptual_loss = perceptual_criterion(images, decoded_image)
                 gan_loss = -self.Disciminator(decoded_image)
 
-                ae_loss = content_loss * self.content_factor + perceptual_loss * self.perceptual_factor + \
+                ae_loss = content_loss * self.content_loss_factor + perceptual_loss * self.perceptual_loss_factor + \
                           gan_loss * self.generator_loss_factor
 
                 content_losses.update(content_loss.item())
