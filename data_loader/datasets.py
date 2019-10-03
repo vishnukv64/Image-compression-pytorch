@@ -23,6 +23,7 @@ class Datasets(Dataset):
             transforms.RandomResizedCrop(self.image_size),
             transforms.RandomHorizontalFlip(),
             transforms.RandomVerticalFlip(),
+            transforms.ToTensor(),
         ])
         return transform(image)
 
