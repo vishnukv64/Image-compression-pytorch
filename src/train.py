@@ -12,7 +12,7 @@ from itertools import chain
 from model.encoder import Encoder
 from model.decoder import Decoder
 from model.discriminator import Discriminator
-from utils.utils import LambdaLR, AverageMeter
+from utils.utils import LambdaLR, AverageMeter, create_vis_plot, update_vis_plot
 from loss.loss import PerceptualLoss
 
 
@@ -78,18 +78,11 @@ class Trainer:
         discriminator_losses = AverageMeter()
         ae_losses = AverageMeter()
 
-        loss_window = self.visdom.line(Y=[0])
-        generator_loss_window = self.visdom.line(Y=[0])
-        discriminator_loss_window = self.visdom.line(Y=[0])
-        content_loss_window = self.visdom.line(Y=[0])
-        perceptual_loss_window = self.visdom.line(Y=[0])
-
-        generator_loss_set = []
-        ae_loss_set = []
-        content_loss_set = []
-        discriminator_loss_set = []
-        perceptual_loss_set = []
-        epoch_set = []
+        loss_window = create_vis_plot('Epoch', 'Loss', 'Total Loss')
+        generator_loss_window = create_vis_plot('Epoch', 'Loss', 'Generator Loss')
+        discriminator_loss_window = create_vis_plot('Epoch', 'Loss', 'Discriminator Loss')
+        content_loss_window = create_vis_plot('Epoch', 'Loss', 'Content Loss')
+        perceptual_loss_window = create_vis_plot('Epoch', 'Loss', 'Perceptual Loss')
 
         if not os.path.exists(self.sample_dir):
             os.makedirs(self.sample_dir)
@@ -102,7 +95,6 @@ class Trainer:
             generator_losses.reset()
             ae_losses.reset()
             discriminator_losses.reset()
-            epoch_set += [epoch]
             for step, images in enumerate(self.data_loader):
                 images = images.to(self.device)
 
@@ -154,21 +146,12 @@ class Trainer:
                     save_image(torch.cat([images, decoded_image], dim=2),
                                os.path.join(self.sample_dir, f"Sample-epoch-{epoch}-step-{step}.png"))
 
-            ae_loss_set += [ae_losses.avg]
-            content_loss_set += [content_losses.avg]
-            generator_loss_set += [generator_losses.avg]
-            perceptual_loss_set += [perceptual_losses.avg]
-            discriminator_loss_set +=[discriminator_losses.avg]
+            update_vis_plot(epoch, ae_losses.avg, loss_window, 'append')
+            update_vis_plot(epoch, generator_losses.avg, generator_loss_window, 'append')
+            update_vis_plot(epoch, discriminator_losses.avg, discriminator_loss_window, 'append')
+            update_vis_plot(epoch, content_losses.avg, content_loss_window, 'append')
+            update_vis_plot(epoch, perceptual_losses.avg, perceptual_loss_window, 'append')
 
-            loss_window = self.visdom.line(Y=ae_loss_set, X=epoch_set, win=loss_window, update='replace')
-            generator_loss_window = self.visdom.line(Y=generator_loss_set, X=epoch_set,
-                                                     win=generator_loss_window, update='replace')
-            discriminator_loss_window = self.visdom.line(Y=discriminator_loss_set, X=epoch_set,
-                                                         win=discriminator_loss_window, update='replace')
-            content_loss_window = self.visdom.line(Y=content_loss_set, X=epoch_set, win=content_loss_window,
-                                                   update='replace')
-            perceptual_loss_window = self.visdom.line(Y=perceptual_loss_set, X=epoch_set, win=perceptual_loss_window,
-                                                      update='replace')
             lr_scheduler.step()
 
             torch.save(self.Encoder.state_dict(), os.path.join(self.checkpoint_dir, f"Encoder-{epoch}.pth"))
