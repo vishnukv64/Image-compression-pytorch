@@ -68,6 +68,7 @@ class Trainer:
 
         perceptual_criterion = PerceptualLoss().to(self.device)
         content_criterion = nn.MSELoss().to(self.device)
+        adversarial_criterion = nn.BCELoss().to(self.device)
 
         self.Encoder.train()
         self.Decoder.train()
@@ -105,6 +106,9 @@ class Trainer:
             for step, images in enumerate(self.data_loader):
                 images = images.to(self.device)
 
+                real_labels = torch.ones((images.size(0), 1)).to(self.device)
+                fake_labels = torch.zeros((images.size(0), 1)).to(self.device)
+
                 encoded_image = self.Encoder(images)
 
                 binary_decoded_image = paq.compress(encoded_image.cpu().detach().numpy().tobytes())
@@ -118,14 +122,14 @@ class Trainer:
 
                 content_loss = content_criterion(images, decoded_image)
                 perceptual_loss = perceptual_criterion(images, decoded_image)
-                gan_loss = (-self.Disciminator(decoded_image)).mean()
+                generator_loss = adversarial_criterion(self.Disciminator(decoded_image), real_labels)
 
                 ae_loss = content_loss * self.content_loss_factor + perceptual_loss * self.perceptual_loss_factor + \
-                          gan_loss * self.generator_loss_factor
+                          generator_loss * self.generator_loss_factor
 
                 content_losses.update(content_loss.item())
                 perceptual_losses.update(perceptual_loss.item())
-                generator_losses.update(gan_loss.item())
+                generator_losses.update(generator_loss.item())
                 ae_losses.update(ae_loss.item())
 
                 optimizer_ae.zero_grad()
@@ -134,7 +138,8 @@ class Trainer:
 
                 interpolated_image = self.eta * images + (1 - self.eta) * decoded_image
                 gravity_penalty = self.Disciminator(interpolated_image).mean()
-                discriminator_loss = self.Disciminator(decoded_image) - self.Disciminator(images)) + \
+                discriminator_loss = adversarial_criterion(self.Disciminator(images), real_labels) -\
+                                     adversarial_criterion(self.Disciminator(decoded_image), fake_labels) +\
                                      gravity_penalty * self.penalty_loss_factor
 
                 optimizer_discriminator.zero_grad()
@@ -143,7 +148,7 @@ class Trainer:
 
                 if step % 100 == 0:
                     print(f"[Epoch {epoch}/{self.num_epoch}] [Batch {step}/{total_step}] "
-                          f"[Content {content_loss:.4f}] [Perceptual] {perceptual_loss:.4f} [Gan {gan_loss:.4f}]"
+                          f"[Content {content_loss:.4f}] [Perceptual] {perceptual_loss:.4f} [Gan {generator_loss:.4f}]"
                           f"[Discriminator {discriminator_loss:.4f}]")
 
                     save_image(torch.cat([images, decoded_image], dim=2),
@@ -165,6 +170,10 @@ class Trainer:
             perceptual_loss_window = self.visdom.line(Y=perceptual_loss_set, X=epoch_set, win=perceptual_loss_window,
                                                       update='replace')
             lr_scheduler.step()
+
+            torch.save(self.Encoder.state_dict(), os.path.join(self.checkpoint_dir, f"Encoder-{epoch}.pth"))
+            torch.save(self.Encoder.state_dict(), os.path.join(self.checkpoint_dir, f"Decoder-{epoch}.pth"))
+            torch.save(self.Encoder.state_dict(), os.path.join(self.checkpoint_dir, f"Discriminator-{epoch}.pth"))
 
     def build_model(self):
         self.Encoder = Encoder(self.in_channels, self.storing_channels, self.nf).to(self.device)

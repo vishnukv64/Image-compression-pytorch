@@ -1,7 +1,8 @@
 import torch.nn as nn
 
+
 class Discriminator(nn.Module):
-    def __init__(self, num_conv_block=4):
+    def __init__(self, num_conv_block=4, weight_init=True):
         super(Discriminator, self).__init__()
 
         block = []
@@ -38,11 +39,28 @@ class Discriminator(nn.Module):
 
         self.classification = nn.Sequential(
             nn.Linear(512 * 9 * 9, 100),
-            nn.Linear(100, 1)
+            nn.Linear(100, 1),
+            nn.Sigmoid()
         )
+
+        if weight_init:
+            self._init_weight()
 
     def forward(self, x):
         x = self.feature_extraction(x)
         x = x.view(x.size(0), -1)
         x = self.classification(x)
         return x
+
+    def _init_weight(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.ones_(m.weight)
+                nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.zeros_(m.bias)

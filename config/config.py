@@ -6,7 +6,7 @@ parser.add_argument('--in_channels', type=int, default=3, help='the number of in
 parser.add_argument('--out_channels', type=int, default=3, help='the number of output channels')
 parser.add_argument('--storing_channels', type=int, default=3, help='the number of channels to store')
 parser.add_argument('--nf', type=int, default=32, help='the number of channels in models')
-parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
+parser.add_argument('--lr', type=float, default=0.00001, help='learning rate')
 parser.add_argument('--b1', type=float, default=0.9, help='coefficients used for computing running averages of gradient and its square')
 parser.add_argument('--b2', type=float, default=0.999, help='coefficients used for computing running averages of gradient and its square')
 parser.add_argument('--weight_decay', type=float, default=1e-2, help='weight decay')

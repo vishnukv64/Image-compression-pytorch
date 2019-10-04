@@ -2,7 +2,7 @@ from model.block import *
 
 
 class Decoder(nn.Module):
-    def __init__(self, in_channels, out_channels, nf=32):
+    def __init__(self, in_channels, out_channels, nf=32, weight_init=True):
         super(Decoder, self).__init__()
 
         block = []
@@ -28,10 +28,26 @@ class Decoder(nn.Module):
             nn.Sigmoid()
         )
 
+        if weight_init:
+            self._init_weight()
+
     def forward(self, x):
         x = x / 63
         x = self.conv1(x)
         x = self.iter_block(x)
         x = self.out_block(x)
         return x
+
+    def _init_weight(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.ones_(m.weight)
+                nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.zeros_(m.bias)
 
