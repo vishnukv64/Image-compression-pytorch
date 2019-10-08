@@ -24,8 +24,7 @@ class Decoder(nn.Module):
 
         self.out_block = nn.Sequential(
             nn.ReflectionPad2d(get_n_padding(5, 1)),
-            nn.Conv2d(in_channels=nf, out_channels=out_channels, kernel_size=5),
-            nn.Sigmoid()
+            nn.Conv2d(in_channels=nf, out_channels=out_channels, kernel_size=5)
         )
 
         if weight_init:
@@ -41,7 +40,7 @@ class Decoder(nn.Module):
     def _init_weight(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                nn.init.xavier_normal_(m.weight)
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
             elif isinstance(m, nn.BatchNorm2d):

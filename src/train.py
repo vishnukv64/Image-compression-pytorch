@@ -12,7 +12,7 @@ from itertools import chain
 from model.encoder import Encoder
 from model.decoder import Decoder
 from model.discriminator import Discriminator
-from utils.utils import LambdaLR, AverageMeter, create_vis_plot, update_vis_plot
+from utils.utils import LambdaLR, AverageMeter, create_vis_plot, update_vis_plot, get_lr
 from loss.loss import PerceptualLoss
 
 
@@ -78,6 +78,7 @@ class Trainer:
         discriminator_losses = AverageMeter()
         ae_losses = AverageMeter()
 
+        lr_window = create_vis_plot('Epoch', 'Learning rate', 'Learning rate')
         loss_window = create_vis_plot('Epoch', 'Loss', 'Total Loss')
         generator_loss_window = create_vis_plot('Epoch', 'Loss', 'Generator Loss')
         discriminator_loss_window = create_vis_plot('Epoch', 'Loss', 'Discriminator Loss')
@@ -104,11 +105,11 @@ class Trainer:
                 encoded_image = self.Encoder(images)
 
                 binary_decoded_image = paq.compress(encoded_image.cpu().detach().numpy().tobytes())
-                encoded_image = paq.decompress(binary_decoded_image)
-
-                encoded_image = torch.from_numpy(np.frombuffer(encoded_image, dtype=np.float32)
-                                                 .reshape(-1, self.storing_channels, self.image_size // 8,
-                                                          self.image_size // 8)).to(self.device)
+                # encoded_image = paq.decompress(binary_decoded_image)
+                #
+                # encoded_image = torch.from_numpy(np.frombuffer(encoded_image, dtype=np.float32)
+                #                                  .reshape(-1, self.storing_channels, self.image_size // 8,
+                #                                           self.image_size // 8)).to(self.device)
 
                 decoded_image = self.Decoder(encoded_image)
 
@@ -137,10 +138,11 @@ class Trainer:
                 optimizer_discriminator.zero_grad()
                 discriminator_loss.backward(retain_graph=True)
                 optimizer_discriminator.step()
+                discriminator_losses.update(discriminator_loss.item())
 
                 if step % 100 == 0:
-                    print(f"[Epoch {epoch}/{self.num_epoch}] [Batch {step}/{total_step}] "
-                          f"[Content {content_loss:.4f}] [Perceptual] {perceptual_loss:.4f} [Gan {generator_loss:.4f}]"
+                    print(f"[Epoch {epoch}/{self.num_epoch}] [Batch {step}/{total_step}] [Learning rate {get_lr(optimizer_ae)}] "
+                          f"[Content {content_loss:.4f}] [Perceptual {perceptual_loss:.4f}] [Gan {generator_loss:.4f}]"
                           f"[Discriminator {discriminator_loss:.4f}]")
 
                     save_image(torch.cat([images, decoded_image], dim=2),
@@ -151,6 +153,7 @@ class Trainer:
             update_vis_plot(epoch, discriminator_losses.avg, discriminator_loss_window, 'append')
             update_vis_plot(epoch, content_losses.avg, content_loss_window, 'append')
             update_vis_plot(epoch, perceptual_losses.avg, perceptual_loss_window, 'append')
+            update_vis_plot(epoch, get_lr(optimizer_ae), lr_window, 'append')
 
             lr_scheduler.step()
 

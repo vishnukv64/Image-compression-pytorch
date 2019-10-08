@@ -24,6 +24,7 @@ class Datasets(Dataset):
             transforms.RandomHorizontalFlip(),
             transforms.RandomVerticalFlip(),
             transforms.ToTensor(),
+            # transforms.Normalize((5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
         return transform(image)
 

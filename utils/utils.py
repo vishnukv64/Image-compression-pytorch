@@ -18,8 +18,8 @@ class LambdaLR:
 
 def create_vis_plot(_xlabel, _ylabel, _title):
     return viz.line(
-        X=torch.zeros((1,)).cpu(),
-        Y=torch.zeros((1, 3)).cpu(),
+        X=torch.zeros((1,)),
+        Y=torch.zeros((1,)),
         opts=dict(
             xlabel=_xlabel,
             ylabel=_ylabel,
@@ -31,13 +31,17 @@ def create_vis_plot(_xlabel, _ylabel, _title):
 def update_vis_plot(iteration, loss, window1, update_type,
                     epoch_size=1):
     viz.line(
-        X=torch.ones((1, 3))*iteration,
-        Y=torch.ones((1, 3))*loss,
+        X=torch.ones((1, 1))*iteration,
+        Y=torch.ones((1, 1))*loss,
         win=window1,
         update=update_type
     )
     # initialize epoch plot on first iteration
 
+
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
 
 
 class AverageMeter(object):

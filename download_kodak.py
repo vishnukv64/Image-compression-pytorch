@@ -15,13 +15,14 @@ examples='''examples:
   python %(prog)s --output-dir=./tmp
 '''
 
+
 def main():
     parser = argparse.ArgumentParser(
         description='Download the Kodak dataset .PNG image files.',
         epilog=examples,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("--output-dir", default='datasets/train', help="Directory where to save the Kodak dataset .PNGs")
+    parser.add_argument("--output-dir", default='datasets/test', help="Directory where to save the Kodak dataset .PNGs")
     args = parser.parse_args()
 
     if args.output_dir is None:
