@@ -29,7 +29,7 @@ class Trainer:
         self.b1 = config.b1
         self.b2 = config.b2
         self.weight_decay = config.weight_decay
-        self.decay_batch_size = config.decay_batch_size
+        self.decay_epoch = config.decay_epoch
         self.content_loss_factor = config.content_loss_factor
         self.perceptual_loss_factor = config.perceptual_loss_factor
         self.generator_loss_factor = config.generator_loss_factor
@@ -62,12 +62,11 @@ class Trainer:
         optimizer_discriminator = Adam(self.Disciminator.parameters(), self.lr, betas=(self.b1, self.b2),
                                        weight_decay=self.weight_decay)
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer_ae,
-                                                         LambdaLR(self.num_epoch, self.epoch, len(self.data_loader),
-                                                                  self.decay_batch_size).step)
+                                                         LambdaLR(self.num_epoch, self.epoch, self.decay_epoch).step)
         total_step = len(self.data_loader)
 
         perceptual_criterion = PerceptualLoss().to(self.device)
-        content_criterion = nn.MSELoss().to(self.device)
+        content_criterion = nn.L1Loss().to(self.device)
         adversarial_criterion = nn.BCELoss().to(self.device)
 
         self.Encoder.train()
@@ -131,7 +130,7 @@ class Trainer:
 
                 interpolated_image = self.eta * images + (1 - self.eta) * decoded_image
                 gravity_penalty = self.Disciminator(interpolated_image).mean()
-                discriminator_loss = adversarial_criterion(self.Disciminator(images), real_labels) -\
+                discriminator_loss = adversarial_criterion(self.Disciminator(images), real_labels) +\
                                      adversarial_criterion(self.Disciminator(decoded_image), fake_labels) +\
                                      gravity_penalty * self.penalty_loss_factor
 
@@ -158,8 +157,8 @@ class Trainer:
             lr_scheduler.step()
 
             torch.save(self.Encoder.state_dict(), os.path.join(self.checkpoint_dir, f"Encoder-{epoch}.pth"))
-            torch.save(self.Encoder.state_dict(), os.path.join(self.checkpoint_dir, f"Decoder-{epoch}.pth"))
-            torch.save(self.Encoder.state_dict(), os.path.join(self.checkpoint_dir, f"Discriminator-{epoch}.pth"))
+            torch.save(self.Decoder.state_dict(), os.path.join(self.checkpoint_dir, f"Decoder-{epoch}.pth"))
+            torch.save(self.Disciminator.state_dict(), os.path.join(self.checkpoint_dir, f"Discriminator-{epoch}.pth"))
 
     def build_model(self):
         self.Encoder = Encoder(self.in_channels, self.storing_channels, self.nf).to(self.device)

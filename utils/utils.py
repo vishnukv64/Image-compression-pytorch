@@ -5,14 +5,13 @@ viz = Visdom()
 
 
 class LambdaLR:
-    def __init__(self, n_epoch, offset, total_batch_size, decay_batch_size):
+    def __init__(self, n_epoch, offset, decay_epoch):
         self.n_epoch = n_epoch
         self.offset = offset
-        self.total_batch_size = total_batch_size
-        self.decay_batch_size = decay_batch_size
+        self.decay_epoch = decay_epoch
 
     def step(self, epoch):
-        factor = pow(0.5, int(((self.offset + epoch) * self.total_batch_size) / self.decay_batch_size))
+        factor = pow(0.5, int((self.offset + epoch) / self.decay_epoch))
         return factor
 
 
