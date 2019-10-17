@@ -114,8 +114,8 @@ class Trainer:
 
                 content_loss = content_criterion(images, decoded_image)
                 perceptual_loss = perceptual_criterion(images, decoded_image)
-                # generator_loss = adversarial_criterion(self.Disciminator(decoded_image), real_labels)
-                generator_loss = -self.Disciminator(decoded_image).mean()
+                generator_loss = adversarial_criterion(self.Disciminator(decoded_image), real_labels)
+                # generator_loss = -self.Disciminator(decoded_image).mean()
 
                 ae_loss = content_loss * self.content_loss_factor + perceptual_loss * self.perceptual_loss_factor + \
                           generator_loss * self.generator_loss_factor
@@ -133,11 +133,11 @@ class Trainer:
                 gravity_penalty = self.Disciminator(interpolated_image).mean()
                 real_loss = adversarial_criterion(self.Disciminator(images), real_labels)
                 fake_loss = adversarial_criterion(self.Disciminator(decoded_image), fake_labels)
-                discriminator_loss = (real_loss + fake_loss) +\
+                discriminator_loss = (real_loss + fake_loss) * self.discriminator_loss_factor / 2 +\
                                      gravity_penalty * self.penalty_loss_factor
 
-                discriminator_loss = self.Disciminator(decoded_image).mean() - self.Disciminator(images).mean() + \
-                                     gravity_penalty * self.penalty_loss_factor
+                # discriminator_loss = self.Disciminator(decoded_image).mean() - self.Disciminator(images).mean() + \
+                #                      gravity_penalty * self.penalty_loss_factor
 
                 optimizer_discriminator.zero_grad()
                 discriminator_loss.backward(retain_graph=True)
