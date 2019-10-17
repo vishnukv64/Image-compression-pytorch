@@ -13,7 +13,7 @@ class Discriminator(nn.Module):
         for _ in range(num_conv_block):
             block += [
                 nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3),
-                nn.InstanceNorm2d(out_channels),
+                nn.BatchNorm2d(out_channels),
                 nn.LeakyReLU()
 
             ]
@@ -22,7 +22,7 @@ class Discriminator(nn.Module):
             block += [
                 nn.ReflectionPad2d(1),
                 nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=2),
-                nn.InstanceNorm2d(out_channels),
+                nn.BatchNorm2d(out_channels),
                 nn.LeakyReLU()
 
             ]
