@@ -35,6 +35,7 @@ class Trainer:
         self.generator_loss_factor = config.generator_loss_factor
         self.discriminator_loss_factor = config.discriminator_loss_factor
         self.penalty_loss_factor = config.penalty_loss_factor
+        self.rate_loss_factor = config.rate_loss_factor
         self.eta = config.eta
 
         self.checkpoint_dir = config.checkpoint_dir
@@ -68,6 +69,7 @@ class Trainer:
         perceptual_criterion = PerceptualLoss().to(self.device)
         content_criterion = nn.L1Loss().to(self.device)
         adversarial_criterion = nn.BCELoss().to(self.device)
+        rate_criterion = nn.BCELoss().to(self.device)
 
         self.Encoder.train()
         self.Decoder.train()
@@ -76,6 +78,7 @@ class Trainer:
         perceptual_losses = AverageMeter()
         discriminator_losses = AverageMeter()
         ae_losses = AverageMeter()
+        rate_losses = AverageMeter()
 
         lr_window = create_vis_plot('Epoch', 'Learning rate', 'Learning rate')
         loss_window = create_vis_plot('Epoch', 'Loss', 'Total Loss')
@@ -83,6 +86,7 @@ class Trainer:
         discriminator_loss_window = create_vis_plot('Epoch', 'Loss', 'Discriminator Loss')
         content_loss_window = create_vis_plot('Epoch', 'Loss', 'Content Loss')
         perceptual_loss_window = create_vis_plot('Epoch', 'Loss', 'Perceptual Loss')
+        rate_loss_window = create_vis_plot('Epoch', 'Loss', 'Rate Loss')
 
         if not os.path.exists(self.sample_dir):
             os.makedirs(self.sample_dir)
@@ -95,6 +99,7 @@ class Trainer:
             generator_losses.reset()
             ae_losses.reset()
             discriminator_losses.reset()
+            rate_losses.reset()
             for step, images in enumerate(self.data_loader):
                 images = images.to(self.device)
 
@@ -118,12 +123,13 @@ class Trainer:
                 # generator_loss = -self.Disciminator(decoded_image).mean()
 
                 ae_loss = content_loss * self.content_loss_factor + perceptual_loss * self.perceptual_loss_factor + \
-                          generator_loss * self.generator_loss_factor
+                          generator_loss * self.generator_loss_factor + rate_criterion * self.rate_loss_factor
 
                 content_losses.update(content_loss.item())
                 perceptual_losses.update(perceptual_loss.item())
                 generator_losses.update(generator_loss.item())
                 ae_losses.update(ae_loss.item())
+                rate_losses.update(real_loss.item())
 
                 optimizer_ae.zero_grad()
                 ae_loss.backward(retain_graph=True)
@@ -158,6 +164,7 @@ class Trainer:
             update_vis_plot(epoch, content_losses.avg, content_loss_window, 'append')
             update_vis_plot(epoch, perceptual_losses.avg, perceptual_loss_window, 'append')
             update_vis_plot(epoch, get_lr(optimizer_ae), lr_window, 'append')
+            update_vis_plot(epoch, rate_losses.avg, rate_loss_window, 'append')
 
             lr_scheduler.step()
 

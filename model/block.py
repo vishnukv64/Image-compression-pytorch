@@ -36,7 +36,7 @@ def up_sample_block(in_channels, out_channels, scale_factor=2):
 
 def down_sample_block(in_channels, out_channels):
     block = nn.Sequential(
-        nn.ReflectionPad2d(get_n_padding(4, 1)),
+        nn.ReflectionPad2d(1),
         nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=4, stride=2)
     )
     return block

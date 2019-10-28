@@ -27,6 +27,8 @@ class Encoder(nn.Module):
 
         self.iter_block = nn.Sequential(*block)
 
+        self.d = down_sample_block(nf, nf)
+
         self.out_block = nn.Sequential(
             nn.ReflectionPad2d(get_n_padding(3, 1)),
             nn.Conv2d(in_channels=nf, out_channels=out_channels, kernel_size=3),
