@@ -119,17 +119,18 @@ class Trainer:
 
                 content_loss = content_criterion(images, decoded_image)
                 perceptual_loss = perceptual_criterion(images, decoded_image)
-                generator_loss = adversarial_criterion(self.Disciminator(decoded_image), real_labels)
-                # generator_loss = -self.Disciminator(decoded_image).mean()
+                # generator_loss = adversarial_criterion(self.Disciminator(decoded_image), real_labels)
+                rate_loss = -torch.log2(encoded_image).mean()
+                generator_loss = -self.Disciminator(decoded_image).mean()
 
                 ae_loss = content_loss * self.content_loss_factor + perceptual_loss * self.perceptual_loss_factor + \
-                          generator_loss * self.generator_loss_factor + rate_criterion * self.rate_loss_factor
+                          generator_loss * self.generator_loss_factor + rate_loss * self.rate_loss_factor
 
                 content_losses.update(content_loss.item())
                 perceptual_losses.update(perceptual_loss.item())
                 generator_losses.update(generator_loss.item())
                 ae_losses.update(ae_loss.item())
-                rate_losses.update(real_loss.item())
+                rate_losses.update(rate_loss.item())
 
                 optimizer_ae.zero_grad()
                 ae_loss.backward(retain_graph=True)
@@ -137,13 +138,13 @@ class Trainer:
 
                 interpolated_image = self.eta * images + (1 - self.eta) * decoded_image
                 gravity_penalty = self.Disciminator(interpolated_image).mean()
-                real_loss = adversarial_criterion(self.Disciminator(images), real_labels)
-                fake_loss = adversarial_criterion(self.Disciminator(decoded_image), fake_labels)
-                discriminator_loss = (real_loss + fake_loss) * self.discriminator_loss_factor / 2 +\
-                                     gravity_penalty * self.penalty_loss_factor
-
-                # discriminator_loss = self.Disciminator(decoded_image).mean() - self.Disciminator(images).mean() + \
+                # real_loss = adversarial_criterion(self.Disciminator(images), real_labels)
+                # fake_loss = adversarial_criterion(self.Disciminator(decoded_image), fake_labels)
+                # discriminator_loss = (real_loss + fake_loss) * self.discriminator_loss_factor / 2 +\
                 #                      gravity_penalty * self.penalty_loss_factor
+                #
+                discriminator_loss = self.Disciminator(decoded_image).mean() - self.Disciminator(images).mean() + \
+                                     gravity_penalty * self.penalty_loss_factor
 
                 optimizer_discriminator.zero_grad()
                 discriminator_loss.backward(retain_graph=True)
